@@ -2875,7 +2875,18 @@ runs:
         
         echo "BUILD_TIME=$BUILD_TIME" >> "$GITHUB_ENV"
         
-        IMG="$OUT/arch/arm64/boot/Image"
+        
+        # === memhook_lkm: 编译反检测内核模块 ===
+        if [ -d "$GITHUB_WORKSPACE/memhook_lkm" ]; then
+          echo "::group::Build memhook_ko.ko (external module)"
+          make LD="$COMMON_KERNEL_FOLDER/ld-wrapper" HOSTLD="$COMMON_KERNEL_FOLDER/ld-wrapper" \
+            -C "$COMMON_KERNEL_FOLDER" O="$OUT" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+            M="$GITHUB_WORKSPACE/memhook_lkm" memhook_ko.ko \
+            || echo "::warning::memhook_ko.ko build failed"
+          echo "::endgroup::"
+        fi
+
+IMG="$OUT/arch/arm64/boot/Image"
         if [ ! -f "$IMG" ]; then
           echo "::error::Kernel Image missing"
           echo "::group::Last 100 lines of build log"
@@ -3042,6 +3053,12 @@ runs:
         fi
         
         cp "$IMAGE_PATH" "$AK3_FOLDER/Image"
+        # === memhook_lkm: 收集 ko 到刷机包 ===
+        if [ -f "$COMMON_KERNEL_FOLDER/out/memhook_lkm/memhook_ko.ko" ]; then
+          cp "$COMMON_KERNEL_FOLDER/out/memhook_lkm/memhook_ko.ko" "$AK3_FOLDER/memhook_ko.ko"
+          echo "Added memhook_ko.ko to ZIP"
+        fi
+
 
         cd "$AK3_FOLDER"
         
@@ -3100,6 +3117,14 @@ runs:
         echo "   Size: $(numfmt --to=iec-i --suffix=B "$ZIP_SIZE")"
         echo "   SHA256: $ZIP_SHA256"
         echo "::endgroup::"
+
+    - name: Upload memhook_lkm artifact
+      if: ${{ env.COMMON_KERNEL_FOLDER != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: memhook_lkm
+        path: ${{ env.COMMON_KERNEL_FOLDER }}/out/memhook_lkm/memhook_ko.ko
+        if-no-files-found: warn
 
     - name: Final Build Summary
       shell: bash
