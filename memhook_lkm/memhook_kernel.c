@@ -43,6 +43,10 @@ int mh_nl_init(void);
 void mh_nl_exit(void);
 int mh_nl_send(int type, int code, int pid, const char *msg);
 
+/* memhook_report.c 提供上报槽轮询（美团进程零痕迹上报） */
+int mh_report_init(void);
+void mh_report_exit(void);
+
 /* ------------------------------------------------------------------ */
 /* 参数                                                                */
 /* ------------------------------------------------------------------ */
@@ -237,6 +241,9 @@ static int __init memhook_init(void) {
     /* NETLINK_USER 事件上报 */
     mh_nl_init();
 
+    /* 上报槽轮询（美团进程零痕迹上报） */
+    mh_report_init();
+
     if (hide_self) {
         hide_module(THIS_MODULE);
     }
@@ -250,6 +257,7 @@ static void __exit memhook_exit(void) {
     unregister_kprobe(&procvm_read_kp);
     unregister_kprobe(&procvm_write_kp);
     unregister_kprobe(&maps_open_kp);
+    mh_report_exit();
     mh_dev_exit();
     mh_nl_exit();
     pr_info("memhook: exit\n");
