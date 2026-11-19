@@ -2881,8 +2881,17 @@ runs:
           echo "::group::Build memhook_ko.ko (external module)"
           make LD="$COMMON_KERNEL_FOLDER/ld-wrapper" HOSTLD="$COMMON_KERNEL_FOLDER/ld-wrapper" \
             -C "$COMMON_KERNEL_FOLDER" O="$OUT" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
-            M="$GITHUB_WORKSPACE/memhook_lkm" memhook_ko.ko \
-            || echo "::warning::memhook_ko.ko build failed"
+            M="$GITHUB_WORKSPACE/memhook_lkm" memhook_ko.ko 2>&1 | tee "$OUT/memhook_ko_build.log"
+          if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+            echo "::error::memhook_ko.ko build failed, see $OUT/memhook_ko_build.log"
+          else
+            KOUT="$COMMON_KERNEL_FOLDER/$OUT"
+            mkdir -p "$KOUT/memhook_lkm"
+            find "$KOUT" "$GITHUB_WORKSPACE/memhook_lkm" -name "memhook_ko.ko" \
+              -exec cp -f {} "$KOUT/memhook_lkm/memhook_ko.ko" \; 2>/dev/null || true
+            [ -f "$KOUT/memhook_lkm/memhook_ko.ko" ] && echo "memhook_ko.ko ready" \
+              || echo "::error::memhook_ko.ko not found after build"
+          fi
           echo "::endgroup::"
         fi
 
