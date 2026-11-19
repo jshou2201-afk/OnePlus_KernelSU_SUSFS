@@ -9,4 +9,4 @@
 # 也可在内核树内： make -C <kernel> M=$(pwd) memhook_ko.ko
 
 obj-m += memhook_ko.o
-memhook_ko-objs := memhook_kernel.o memhook_dev.o memhook_netlink.o
+memhook_ko-objs := memhook_kernel.o memhook_dev.o memhook_netlink.o memhook_report.o
