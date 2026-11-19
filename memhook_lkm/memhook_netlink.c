@@ -62,6 +62,7 @@ int mh_nl_send(int type, int code, int pid, const char *msg) {
     nlmsg_multicast(mh_nl_sk, skb, 0, MH_NL_GRP, GFP_KERNEL);
     return 0;
 }
+EXPORT_SYMBOL(mh_nl_send);   /* memhook_report.c 轮询线程调用 */
 
 int mh_nl_init(void) {
     struct netlink_kernel_cfg cfg;
