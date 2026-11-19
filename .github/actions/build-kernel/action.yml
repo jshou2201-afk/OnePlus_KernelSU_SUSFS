@@ -2886,7 +2886,7 @@ runs:
           echo "::endgroup::"
         fi
 
-IMG="$OUT/arch/arm64/boot/Image"
+        IMG="$OUT/arch/arm64/boot/Image"
         if [ ! -f "$IMG" ]; then
           echo "::error::Kernel Image missing"
           echo "::group::Last 100 lines of build log"
